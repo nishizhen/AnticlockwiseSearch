@@ -12,7 +12,7 @@ RUN pip install poetry
 # 使用 --no-root 避免安装当前项目本身 (因为它还没完全复制)
 # 使用 --no-dev 避免安装开发依赖，减小最终镜像大小
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root
 
 # 复制其余的应用代码
 COPY . .
