@@ -1,0 +1,7 @@
+# frontend/.dockerignore
+node_modules/
+dist/
+.vscode/
+.git/
+.gitignore
+.env
