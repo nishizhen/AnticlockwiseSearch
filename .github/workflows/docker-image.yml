@@ -35,7 +35,9 @@ jobs:
           context: ./backend # Dockerfile 所在的目录
           file: ./backend/Dockerfile # Dockerfile 路径
           push: true # 设置为 false 如果你不想推送到 Docker Hub，只在 Actions 中构建
-          tags: nishizhen/anticlockwise_backend:latest
+          tags: |
+            nishizhen/anticlockwise_backend:latest
+            nishizhen/anticlockwise_backend:${{ github.sha }}
           # 如果你想推送到 Docker Hub, 'push' 设为 true, 并确保登录步骤已启用
           cache-from: type=gha,scope=backend-build # 开启 GitHub Actions 缓存 (可选，提高构建速度)
           cache-to: type=gha,scope=backend-build,mode=max
@@ -46,7 +48,9 @@ jobs:
           context: ./frontend # Dockerfile 所在的目录
           file: ./frontend/Dockerfile # Dockerfile 路径
           push: true # 设置为 false 如果你不想推送到 Docker Hub，只在 Actions 中构建
-          tags: nishizhen/anticlockwise_frontend:latest
+          tags: |
+            nishizhen/anticlockwise_frontend:latest
+            nishizhen/anticlockwise_frontend:${{ github.sha }}
           # 如果你想推送到 Docker Hub, 'push' 设为 true, 并确保登录步骤已启用
           cache-from: type=gha,scope=frontend-build
           cache-to: type=gha,scope=frontend-build,mode=max
