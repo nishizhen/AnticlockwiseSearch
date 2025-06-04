@@ -82,13 +82,17 @@ JOPLIN_TOKEN="YourJoplinPersonalToken"
 Ensure Docker and Docker Compose are installed on your system.
 
 ```bash
-docker compose up --build -d
+docker compose -f docker-compose.build.yml up --build -d # self build
+```
+or
+```bash
+docker compose up -d # use dockerhub images
 ```
 
   * `--build` will build images for the first time or after changes to Dockerfiles/code.
   * `-d` runs services in the background.
 
-Once deployed successfully, visit `http://localhost` (if port 80 is available; otherwise, check your `docker-compose.yml` for port mappings) to use AnticlockwiseSearch.
+Once deployed successfully, visit `http://localhost` (if port 80 is available; otherwise, check your `docker-compose.build.yml` for port mappings) to use AnticlockwiseSearch.
 
 ### 4\. Local Development Run (Without Docker)
 

@@ -82,13 +82,17 @@ JOPLIN_TOKEN="你的JoplinPersonalToken"
 确保你的系统已安装 Docker 和 Docker Compose。
 
 ```bash
-docker compose up --build -d
+docker compose -f docker-compose.build.yml up --build -d # 自己构建
+```
+或者
+```bash
+docker compose up -d # 使用dockerhub的镜像
 ```
 
   * `--build` 会首次构建镜像或在 Dockerfile/代码更改后重新构建。
   * `-d` 会在后台运行服务。
 
-部署成功后，访问 `http://localhost` (如果 80 端口可用，否则请检查 `docker-compose.yml` 中的端口映射) 即可使用 AnticlockwiseSearch。
+部署成功后，访问 `http://localhost` (如果 80 端口可用，否则请检查 `docker-compose.build.yml` 中的端口映射) 即可使用 AnticlockwiseSearch。
 
 ### **4. 本地开发运行 (无需 Docker)**
 

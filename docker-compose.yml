@@ -1,31 +1,32 @@
-# AnticlockwiseSearch/docker-compose.yml
+# docker-compose.yml
+# 部署 AnticlockwiseSearch
+#
+# 使用方法：
+# 1. 在此文件相同目录下创建 .env 文件，并根据你的 NAS 服务配置填写 API 密钥和地址。
+#    示例 .env 文件内容请参考：https://github.com/nishizhen/AnticlockwiseSearch/blob/main/.env.example
+# 2. 运行：docker compose up -d
+#
 version: '3.8'
 
 services:
-  # 后端服务
-  anticlockwise_backend: # 更改服务名称为 anticlockwise_backend
-    build:
-      context: ./backend # 构建上下文指向 backend 目录
-      dockerfile: Dockerfile
+  # AnticlockwiseSearch 后端服务
+  anticlockwise_backend:
+    image: nishizhen/anticlockwise_backend:latest # 从 Docker Hub 拉取最新镜像
     ports:
-      - "8000:8000" # 将容器的 8000 端口映射到主机的 8000 端口
-    env_file: # 从 .env 文件加载环境变量
+      - "8000:8000" # 将容器的 8000 端口映射到主机的 8000 端口（用于后端调试或直接访问 API）
+    env_file: # 从 .env 文件加载环境变量，用于连接你的 NAS 服务
       - ./.env
-    volumes:
-      - ./backend:/app # 映射本地后端代码到容器，方便开发时热重载
     restart: unless-stopped # 容器退出时自动重启
 
-  # 前端服务
-  anticlockwise_frontend: # 更改服务名称为 anticlockwise_frontend
-    build:
-      context: ./frontend # 构建上下文指向 frontend 目录
-      dockerfile: Dockerfile
+  # AnticlockwiseSearch 前端服务
+  anticlockwise_frontend:
+    image: nishizhen/anticlockwise_frontend:latest # 从 Docker Hub 拉取最新镜像
     ports:
-      - "80:80" # 将前端服务映射到主机的 80 端口，可以直接通过 IP 访问
+      - "80:80" # 将容器的 80 端口映射到主机的 80 端口，可以直接通过 IP 访问（例如 http://你的NASIP）
     depends_on:
-      - anticlockwise_backend # 确保后端服务启动后再启动前端 (依赖关系也已更新)
+      - anticlockwise_backend # 确保后端服务启动后再启动前端
     environment:
       # 前端通过 Docker 内部网络访问后端服务
-      # `anticlockwise_backend` 是 docker-compose.yml 中定义的后端服务名称
+      # 'anticlockwise_backend' 是 docker-compose.yml 中定义的后端服务名称
       VITE_API_BASE_URL: http://anticlockwise_backend:8000
     restart: unless-stopped
