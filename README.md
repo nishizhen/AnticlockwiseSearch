@@ -1,14 +1,8 @@
------
-
 # AnticlockwiseSearch
-
------
 
 ## Welcome to AnticlockwiseSearch\!
 
 AnticlockwiseSearch is a unified search platform designed for home NAS users. Are you tired of switching between PhotoPrism to find photos, Jellyfin for movies, Audiobookshelf for audiobooks, Calibre Web for e-books, and Joplin for notes, just to search for a specific item? AnticlockwiseSearch aims to solve this by providing a **single, unified search entry point** for all your scattered digital resources on your NAS.
-
------
 
 ## Project Philosophy
 
@@ -19,8 +13,6 @@ We believe your personal digital resources should work for you, not the other wa
   * **Plugin-Based Extensibility:** Designed to be highly modular and configurable, making it easy to add, remove, or customize data sources based on your needs.
   * **Minimize Redundant Indexing:** Prioritize real-time searching by directly calling existing service APIs, reducing data redundancy and maintenance overhead.
 
------
-
 ## Currently Supported MVP Data Sources (More Coming Soon\!)
 
 In its MVP (Minimum Viable Product) stage, AnticlockwiseSearch initially supports the following popular open-source resource management services:
@@ -30,8 +22,6 @@ In its MVP (Minimum Viable Product) stage, AnticlockwiseSearch initially support
   * **PhotoPrism:** Photo and video management
   * **Calibre Web:** E-book management
   * **Joplin:** Notes and knowledge base (requires Joplin Server)
-
------
 
 ## How to Get Started (For Developers)
 
@@ -136,7 +126,6 @@ If you prefer to run and debug the project in your local development environment
     ```
     The frontend will run on `http://localhost:5173`.
 
------
 
 ## Contribution Guide
 
@@ -163,12 +152,8 @@ AnticlockwiseSearch welcomes contributions in all forms\! We hope this project b
 
 When submitting a Pull Request, please provide a clear description explaining your changes and new features. We look forward to your contributions\!
 
------
-
 ## License
 
 This project is released under the [MIT License](https://www.google.com/search?q=LICENSE).
-
------
 
 **Thank you for your interest and support in AnticlockwiseSearch\!**

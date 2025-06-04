@@ -1,14 +1,11 @@
------
 
 # AnticlockwiseSearch
 
------
 
 ## 欢迎来到 AnticlockwiseSearch！
 
 AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。你是否厌倦了在 PhotoPrism 里找照片、在 Jellyfin 里找电影、在 Audiobookshelf 里找有声书、在 Calibre Web 里找电子书，以及在 Joplin 里找笔记时，需要挨个打开应用进行搜索？AnticlockwiseSearch 的目标就是解决这个问题，它提供一个**统一的搜索入口**，让你能从一个地方搜索所有这些分散在 NAS 上的数字资源。
 
------
 
 ## 项目理念
 
@@ -19,7 +16,6 @@ AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。�
   * **插件化扩展：** 设计为高度模块化和可配置，方便你根据需求添加、移除或自定义数据源。
   * **避免冗余索引：** 优先通过调用现有服务的 API 进行实时搜索，最大程度减少数据冗余和维护成本。
 
------
 
 ## 当前支持的 MVP 数据源 (更多即将到来！)
 
@@ -31,7 +27,6 @@ AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。�
   * **Calibre Web:** 电子书管理
   * **Joplin:** 笔记和知识库 (需配合 Joplin Server)
 
------
 
 ## 如何开始？(为开发者准备)
 
@@ -136,7 +131,6 @@ docker compose up -d # 使用dockerhub的镜像
     ```
     前端将在 `http://localhost:5173` 运行。
 
------
 
 ## 贡献指南
 
@@ -164,12 +158,10 @@ AnticlockwiseSearch 欢迎所有形式的贡献！我们希望这个项目能成
 
 在提交 Pull Request 时，请提供清晰的描述，解释你的更改和新增的功能。我们期待你的加入！
 
------
 
 ## 许可证
 
 本项目采用 [MIT 许可证](https://www.google.com/search?q=LICENSE) 发布。
 
------
 
 **感谢你对 AnticlockwiseSearch 的关注和支持！**
