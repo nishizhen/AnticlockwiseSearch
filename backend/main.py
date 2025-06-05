@@ -1,5 +1,7 @@
 # backend/main.py
+
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware # 新增导入
 from typing import List, Dict, Optional
 import asyncio
 from pydantic import BaseModel
@@ -22,6 +24,28 @@ class SearchResult(BaseModel):
     # 更多可选字段，例如：tags, authors, duration 等
 
 app = FastAPI(title="AnticlockwiseSearch Backend", version="0.1.0")
+
+# --- CORS 配置开始 ---
+# 定义允许跨域请求的源列表
+# 在开发环境中，通常是你的前端开发服务器地址
+# 在生产环境中，你需要替换为你的实际前端部署域名或 IP
+origins = [
+    "http://localhost:5173",  # 你的前端开发服务器地址 (Vite 默认)
+    "http://127.0.0.1:5173",  # 另一个常见的本地开发地址
+    # 以下是你可能在生产环境中需要添加的地址，请根据实际情况取消注释并修改
+    # "http://你的NAS_IP",
+    # "http://你的自定义域名.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,       # 允许的源列表
+    allow_credentials=True,      # 允许发送 cookies 和认证头（如果需要）
+    allow_methods=["*"],         # 允许所有 HTTP 方法 (GET, POST, PUT, DELETE等)
+    allow_headers=["*"],         # 允许所有请求头
+)
+# --- CORS 配置结束 ---
+
 
 # --- 数据源配置 (从环境变量读取) ---
 DATA_SOURCE_CONFIGS: Dict[str, dict] = {
@@ -78,16 +102,38 @@ class DataSourceAdapter:
 # --- 实现具体的数据源适配器 ---
 
 class JellyfinAdapter(DataSourceAdapter):
+    # 构造函数已经由 DataSourceAdapter 处理了 config, api_base_url, web_base_url
+    # 所以这里不需要额外定义 __init__，除非你有 Jellyfin 特定的初始化逻辑
+
     async def search(self, query: str) -> List[SearchResult]:
         if not self.enabled: return []
         results = []
         try:
+            # 确保 api_base_url, api_key, user_id 都已正确加载
+            if not self.api_base_url:
+                print("JellyfinAdapter: api_base_url is not set for the adapter.")
+                return results
+            if "api_key" not in self.config or not self.config["api_key"]:
+                print("JellyfinAdapter: API key is not set in config.")
+                return results
+            if "user_id" not in self.config or not self.config["user_id"]:
+                print("JellyfinAdapter: User ID is not set in config.")
+                return results
+
             async with httpx.AsyncClient() as client:
                 headers = {"X-MediaBrowser-Token": self.config["api_key"]}
                 user_id = self.config["user_id"]
+
+                # 定义请求参数
+                params = {
+                    "searchTerm": query,
+                    "Recursive": "true",
+                    "IncludeItemTypes": "Movie,Series,Episode,Audio,Photo,Book" # 包含常见类型
+                }
+                request_url = f"{self.api_base_url}/Users/{user_id}/Items"
                 response = await client.get(
-                    f"{self.api_base_url}/Users/{user_id}/Items",
-                    params={"searchTerm": query, "Recursive": "true", "IncludeItemTypes": "Movie,Series,Episode,Audio,Photo,Book"}, # 包含常见类型
+                    request_url,
+                    params=params,
                     headers=headers,
                     timeout=10
                 )
@@ -110,20 +156,33 @@ class JellyfinAdapter(DataSourceAdapter):
                     ))
         except httpx.HTTPStatusError as e:
             print(f"Jellyfin search failed ({e.request.url}): {e.response.status_code} - {e.response.text}")
+            # 在这里也可以打印详细的错误响应体
+            if e.response:
+                print(f"Jellyfin error response body: {e.response.text}")
         except httpx.RequestError as e:
             print(f"Jellyfin request error: {e}")
+        except Exception as e: # 捕获其他所有异常
+            print(f"An unexpected error occurred in JellyfinAdapter: {e}")
+            
         return results
 
     def _build_detail_url(self, item_id: str, item_type: Optional[str] = None) -> str:
         # Jellyfin Web UI 通常在根路径，而非API路径
-        return f"{self.web_base_url}/web/index.html#!/details?item={item_id}"
-
+        return f"{self.web_base_url}/web/index.html#!/details?id={item_id}"
 
 class AudiobookshelfAdapter(DataSourceAdapter):
     async def search(self, query: str) -> List[SearchResult]:
         if not self.enabled: return []
         results = []
         try:
+            # 确保 api_base_url, api_key 都已正确加载
+            if not self.api_base_url:
+                print("AudiobookshelfAdapter: api_base_url is not set for the adapter.")
+                return results
+            if "api_key" not in self.config or not self.config["api_key"]:
+                print("AudiobookshelfAdapter: API key is not set in config.")
+                return results
+
             async with httpx.AsyncClient() as client:
                 # Audiobookshelf API 认证可能需要 Bearer Token
                 headers = {"Authorization": f"Bearer {self.config['api_key']}"}
@@ -166,6 +225,14 @@ class PhotoPrismAdapter(DataSourceAdapter):
         if not self.enabled: return []
         results = []
         try:
+            # 确保 api_base_url, api_key 都已正确加载
+            if not self.api_base_url:
+                print("PhotoPrismAdapter: api_base_url is not set for the adapter.")
+                return results
+            if "api_key" not in self.config or not self.config["api_key"]:
+                print("PhotoPrismAdapter: API key is not set in config.")
+                return results
+
             async with httpx.AsyncClient() as client:
                 # PhotoPrism API Key 通常在查询参数中
                 response = await client.get(
@@ -202,6 +269,11 @@ class CalibreWebAdapter(DataSourceAdapter):
         if not self.enabled: return []
         results = []
         try:
+            # 确保 api_base_url 已正确加载
+            if not self.api_base_url:
+                print("CalibreWebAdapter: api_base_url is not set for the adapter.")
+                return results
+
             async with httpx.AsyncClient() as client:
                 # Calibre-Web 简单的搜索API，可能没有复杂的认证
                 response = await client.get(
@@ -237,6 +309,14 @@ class JoplinAdapter(DataSourceAdapter):
         if not self.enabled: return []
         results = []
         try:
+            # 确保 api_base_url, token 都已正确加载
+            if not self.api_base_url:
+                print("JoplinAdapter: api_base_url is not set for the adapter.")
+                return results
+            if "token" not in self.config or not self.config["token"]:
+                print("JoplinAdapter: Token is not set in config.")
+                return results
+
             async with httpx.AsyncClient() as client:
                 # Joplin Data API 搜索笔记，需要 token
                 response = await client.get(
@@ -310,7 +390,7 @@ async def unified_search(query: str = Query(..., min_length=1, max_length=100)):
 async def get_config():
     """返回当前数据源配置（用于前端展示，敏感信息请勿直接返回）"""
     # 在实际应用中，这里应该过滤掉敏感信息，只返回公共配置
-    display_config = {k: {key: v for key, v in val.items() if key not in ["api_key", "token", "user_id"]} 
+    display_config = {k: {key: v for key, val in val.items() if key not in ["api_key", "token", "user_id"]} 
                       for k, val in DATA_SOURCE_CONFIGS.items()}
     return display_config
 
