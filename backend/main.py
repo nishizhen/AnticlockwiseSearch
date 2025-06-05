@@ -1,13 +1,14 @@
 # backend/main.py
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware # 新增导入
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Optional
 import asyncio
 from pydantic import BaseModel
 import httpx
 import os
 from dotenv import load_dotenv
+import urllib.parse # 导入用于 URL 编码的模块
 
 # 加载 .env 文件中的环境变量
 load_dotenv()
@@ -63,10 +64,11 @@ DATA_SOURCE_CONFIGS: Dict[str, dict] = {
         "api_key": os.getenv("PHOTOPRISM_API_KEY", "")
     },
     "audiobookshelf": {
-        "enabled": False,
+        "enabled": True,
         "api_base_url": os.getenv("AUDIOBOOKSHELF_API_BASE_URL", "http://your-audiobookshelf-ip:80/api"),
         "web_base_url": os.getenv("AUDIOBOOKSHELF_WEB_BASE_URL", "http://your-audiobookshelf-ip"),
-        "api_key": os.getenv("AUDIOBOOKSHELF_API_KEY", "") # 替换为实际的认证方式
+        "username": os.getenv("AUDIOBOOKSHELF_USERNAME", ""), # <--- 从环境变量读取用户名
+        "password": os.getenv("AUDIOBOOKSHELF_PASSWORD", "")  # <--- 从环境变量读取密码
     },
     "calibreweb": {
         "enabled": False,
@@ -95,8 +97,8 @@ class DataSourceAdapter:
         """执行搜索并返回标准化结果"""
         raise NotImplementedError
 
-    def _build_detail_url(self, resource_id: str, item_type: Optional[str] = None) -> str:
-        """根据资源ID和类型构建跳转到源应用的详情URL"""
+    # 统一 _build_detail_url 接口，允许传递 original_query
+    def _build_detail_url(self, item_id: str, item_type: Optional[str] = None, original_query: Optional[str] = None) -> str:
         raise NotImplementedError
 
 # --- 实现具体的数据源适配器 ---
@@ -171,53 +173,218 @@ class JellyfinAdapter(DataSourceAdapter):
         return f"{self.web_base_url}/web/index.html#!/details?id={item_id}"
 
 class AudiobookshelfAdapter(DataSourceAdapter):
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self.username = config.get("username")
+        self.password = config.get("password")
+        self.session_token: Optional[str] = None
+        self.token_lock = asyncio.Lock()
+        print(f"DEBUG: AudiobookshelfAdapter web_base_url is: {self.web_base_url}") # 调试信息
+
+    async def _login(self) -> bool:
+        if not self.username or not self.password or not self.web_base_url:
+            print("AudiobookshelfAdapter: Username, password, or Web base URL is not set for login.")
+            return False
+
+        login_url = f"{self.web_base_url}/login" # 确保这里使用 web_base_url
+        
+        # --- 缺失的 payload 定义，非常重要！ ---
+        payload = {
+            "username": self.username,
+            "password": self.password
+        }
+        # -------------------------------------
+
+        print("\n--- AudiobookshelfAdapter Debug: Attempting Login ---")
+        print(f"Login URL: {login_url}")
+        print(f"Username: {self.username}")
+        print("--------------------------------------------------\n")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    login_url,
+                    json=payload, # 现在 payload 已经定义了
+                    timeout=5
+                )
+                response.raise_for_status()
+
+                data = response.json()
+                if "user" in data and "token" in data["user"]:
+                    self.session_token = data["user"]["token"]
+                    self.default_library_id = data.get("userDefaultLibraryId") 
+                    print("--- AudiobookshelfAdapter Debug: Login Successful, Token Acquired ---")
+                    return True
+                else:
+                    print("--- AudiobookshelfAdapter Debug: Login Failed, No Token in Response ---")
+                    print(f"Response: {data}")
+                    self.session_token = None
+                    return False
+        except httpx.HTTPStatusError as e:
+            print(f"Audiobookshelf login failed ({e.request.url}): {e.response.status_code} - {e.response.text}")
+            # 如果是认证失败（例如 401），清除令牌以便下次尝试重新登录
+            if e.response.status_code == 401:
+                self.session_token = None 
+            return False
+        except httpx.RequestError as e:
+            print(f"Audiobookshelf login request error: {e}")
+            self.session_token = None
+            return False
+        except Exception as e:
+            print(f"An unexpected error occurred during Audiobookshelf login: {e}")
+            self.session_token = None
+            return False
+
     async def search(self, query: str) -> List[SearchResult]:
         if not self.enabled: return []
         results = []
-        try:
-            # 确保 api_base_url, api_key 都已正确加载
-            if not self.api_base_url:
-                print("AudiobookshelfAdapter: api_base_url is not set for the adapter.")
-                return results
-            if "api_key" not in self.config or not self.config["api_key"]:
-                print("AudiobookshelfAdapter: API key is not set in config.")
+
+        async with self.token_lock:
+            if not self.session_token:
+                if not await self._login():
+                    print("AudiobookshelfAdapter: Failed to obtain session token. Cannot perform search.")
+                    return results
+
+        if not self.session_token:
                 return results
 
+        # --- 添加对 default_library_id 的检查，确保它存在 ---
+        if not hasattr(self, 'default_library_id') or not self.default_library_id:
+            print("AudiobookshelfAdapter: Default library ID not found after login. Cannot perform search.")
+            return results
+        # ---------------------------------------------------
+
+        try:
+            # --- 修改搜索 URL，包含 default_library_id ---
+            search_url = f"{self.api_base_url}/libraries/{self.default_library_id}/search"
+            # ------------------------------------------------
+
+            headers = {
+                "Authorization": f"Bearer {self.session_token}"
+            }
+            params = {
+                "q": query, # --- 修改参数名 'query' 为 'q' ---
+                "limit": 50
+            }
+
+            print("\n--- AudiobookshelfAdapter Debug: Outgoing Search Request ---")
+            print(f"URL: {search_url}")
+            print(f"Params: {params}")
+            print(f"Headers (partial): Authorization: Bearer <token>...")
+            print("---------------------------------------------------------\n")
+
             async with httpx.AsyncClient() as client:
-                # Audiobookshelf API 认证可能需要 Bearer Token
-                headers = {"Authorization": f"Bearer {self.config['api_key']}"}
                 response = await client.get(
-                    f"{self.api_base_url}/search",
-                    params={"query": query},
+                    search_url,
                     headers=headers,
+                    params=params,
                     timeout=10
                 )
                 response.raise_for_status()
+
+                print("\n--- AudiobookshelfAdapter Debug: Incoming Search Response ---")
+                print(f"Status Code: {response.status_code}")
+                print(f"Response Body (partial): {response.text[:500]}...")
+                print("-----------------------------------------------------------\n")
+
                 data = response.json()
-                # Audiobookshelf的搜索结果可能包含books, series, artists等
-                for item in data.get("books", []):
-                    thumbnail_url = f"{self.api_base_url}/items/{item['id']}/cover" if item.get("coverPath") else None
+                
+                items = []
+                # Audiobookshelf search results can be under 'books' or 'podcast' or other types
+                # Check for 'books' first (common for audiobooks)
+                if "books" in data and isinstance(data["books"], list):
+                    items.extend(data["books"])
+                # Then check for 'podcast' (as seen in your log)
+                if "podcast" in data and isinstance(data["podcast"], list):
+                    items.extend(data["podcast"])
+                # You might need to add other types here if your Audiobookshelf has mixed content (e.g., 'series', 'albums')
+                # For simplicity, we'll focus on 'books' and 'podcast' for now.
+
+                if not items: # If no items found in 'books' or 'podcast'
+                    print(f"AudiobookshelfAdapter: No recognized items (books/podcast) in search response: {data}")
+                    return results # Return empty results if nothing found
+
+                for item in items:
+                    # ... (book_data, book_id, cover_path 的获取逻辑保持不变) ...
+                    if "libraryItem" in item: # This indicates a podcast item structure
+                        book_data = item["libraryItem"].get("media", {}).get("metadata", {})
+                        book_id = item["libraryItem"].get("id")
+                        cover_path = item["libraryItem"].get("media", {}).get("coverPath") 
+                        # For podcast items, description might be in media.metadata.description
+                        description_raw_val = book_data.get("description") # Get the value, it can be None
+                        author_val = book_data.get("author") # Can be None
+                        series_val = book_data.get("series") # Can be None
+                    else: # Assume it's a top-level book item
+                        book_data = item
+                        book_id = item.get("_id")
+                        cover_path = item.get("coverPath")
+                        description_raw_val = book_data.get("description") # Get the value, it can be None
+                        author_val = book_data.get("author") # Can be None
+                        series_val = book_data.get("series") # Can be None
+
+
+                    if not book_id:
+                        print(f"AudiobookshelfAdapter: Skipping item due to missing ID: {item}")
+                        continue
+
+                    title = book_data.get("title")
+
+                    # --- 核心修改：更健壮地构建 description ---
+                    description_parts = []
+
+                    # 如果有系列信息，添加到描述最前面
+                    if series_val: # Only add if not None and not empty
+                        description_parts.append(f"Series: {series_val}")
+
+                    # 如果有作者信息，添加到描述前面
+                    if author_val: # Only add if not None and not empty
+                        description_parts.append(f"Author: {author_val}")
+
+                    # 如果有原始描述，添加到描述最后
+                    if description_raw_val: # Only add if not None and not empty
+                        description_parts.append(description_raw_val)
+                    
+                    # 使用换行符连接所有部分，并去除整体的首尾空白
+                    description = "\n".join(description_parts).strip()
+                    # 如果最终描述是空的，确保它是空字符串而不是None
+                    if not description:
+                        description = ""
+                    # ----------------------------------------
+                    
+                    thumbnail_url = f"{self.api_base_url}/items/{book_id}/cover"
+                    
                     results.append(SearchResult(
-                        id=item["id"],
+                        id=book_id,
                         source="Audiobookshelf",
-                        title=item.get("title", "Untitled Audiobook"),
-                        description=item.get("description"),
-                        thumbnail_url=thumbnail_url,
-                        detail_url=self._build_detail_url(item["id"], "book"),
+                        title=title or "Untitled Audiobook",
+                        description=description,
+                        thumbnail_url=thumbnail_url, # 这一行现在更简洁和可靠
+                        detail_url=self._build_detail_url(book_id, item_type="book"),
                         type="Audiobook"
                     ))
-                # 也可以添加对 series, artists 等的搜索结果处理
+                
+                print(f"\n--- AudiobookshelfAdapter Debug: Parsed {len(results)} results from Audiobookshelf. ---")
+                print("-----------------------------------------------------------------------\n")
+
         except httpx.HTTPStatusError as e:
             print(f"Audiobookshelf search failed ({e.request.url}): {e.response.status_code} - {e.response.text}")
+            if e.response:
+                print(f"Audiobookshelf error response body: {e.response.text}")
+            if e.response.status_code == 401:
+                self.session_token = None
         except httpx.RequestError as e:
-            print(f"Audiobookshelf request error: {e}")
+            print(f"Audiobookshelf search request error: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred in AudiobookshelfAdapter: {e}")
         return results
 
-    def _build_detail_url(self, item_id: str, item_type: Optional[str] = None) -> str:
+    def _build_detail_url(self, item_id: str, item_type: Optional[str] = None, original_query: Optional[str] = None) -> str:
+        # Audiobookshelf 的书籍详情页通常是 /audiobookshelf/audiobooks/<book_id>
+        # 这里不需要 original_query，因为 ABS 的详情页是基于 ID 的
         if item_type == "book":
-            return f"{self.web_base_url}/book/{item_id}"
-        # 其他类型如 series 等可在此扩展
-        return f"{self.web_base_url}/" # 回退到主页
+            return f"{self.web_base_url}/item/{item_id}"
+        return f"{self.web_base_url}/"
+
 
 class PhotoPrismAdapter(DataSourceAdapter):
     async def search(self, query: str) -> List[SearchResult]:
