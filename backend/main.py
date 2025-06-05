@@ -188,7 +188,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
 
         login_url = f"{self.web_base_url}/login" # 确保这里使用 web_base_url
         
-        # --- 缺失的 payload 定义，非常重要！ ---
         payload = {
             "username": self.username,
             "password": self.password
@@ -204,7 +203,7 @@ class AudiobookshelfAdapter(DataSourceAdapter):
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     login_url,
-                    json=payload, # 现在 payload 已经定义了
+                    json=payload,
                     timeout=5
                 )
                 response.raise_for_status()
@@ -213,11 +212,8 @@ class AudiobookshelfAdapter(DataSourceAdapter):
                 if "user" in data and "token" in data["user"]:
                     self.session_token = data["user"]["token"]
                     self.default_library_id = data.get("userDefaultLibraryId") 
-                    print("--- AudiobookshelfAdapter Debug: Login Successful, Token Acquired ---")
                     return True
                 else:
-                    print("--- AudiobookshelfAdapter Debug: Login Failed, No Token in Response ---")
-                    print(f"Response: {data}")
                     self.session_token = None
                     return False
         except httpx.HTTPStatusError as e:
@@ -252,26 +248,16 @@ class AudiobookshelfAdapter(DataSourceAdapter):
         if not hasattr(self, 'default_library_id') or not self.default_library_id:
             print("AudiobookshelfAdapter: Default library ID not found after login. Cannot perform search.")
             return results
-        # ---------------------------------------------------
 
         try:
-            # --- 修改搜索 URL，包含 default_library_id ---
             search_url = f"{self.api_base_url}/libraries/{self.default_library_id}/search"
-            # ------------------------------------------------
-
             headers = {
                 "Authorization": f"Bearer {self.session_token}"
             }
             params = {
-                "q": query, # --- 修改参数名 'query' 为 'q' ---
+                "q": query,
                 "limit": 50
             }
-
-            print("\n--- AudiobookshelfAdapter Debug: Outgoing Search Request ---")
-            print(f"URL: {search_url}")
-            print(f"Params: {params}")
-            print(f"Headers (partial): Authorization: Bearer <token>...")
-            print("---------------------------------------------------------\n")
 
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -281,11 +267,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
                     timeout=10
                 )
                 response.raise_for_status()
-
-                print("\n--- AudiobookshelfAdapter Debug: Incoming Search Response ---")
-                print(f"Status Code: {response.status_code}")
-                print(f"Response Body (partial): {response.text[:500]}...")
-                print("-----------------------------------------------------------\n")
 
                 data = response.json()
                 
@@ -305,12 +286,10 @@ class AudiobookshelfAdapter(DataSourceAdapter):
                     return results # Return empty results if nothing found
 
                 for item in items:
-                    # ... (book_data, book_id, cover_path 的获取逻辑保持不变) ...
                     if "libraryItem" in item: # This indicates a podcast item structure
                         book_data = item["libraryItem"].get("media", {}).get("metadata", {})
                         book_id = item["libraryItem"].get("id")
                         cover_path = item["libraryItem"].get("media", {}).get("coverPath") 
-                        # For podcast items, description might be in media.metadata.description
                         description_raw_val = book_data.get("description") # Get the value, it can be None
                         author_val = book_data.get("author") # Can be None
                         series_val = book_data.get("series") # Can be None
@@ -322,14 +301,11 @@ class AudiobookshelfAdapter(DataSourceAdapter):
                         author_val = book_data.get("author") # Can be None
                         series_val = book_data.get("series") # Can be None
 
-
                     if not book_id:
                         print(f"AudiobookshelfAdapter: Skipping item due to missing ID: {item}")
                         continue
 
                     title = book_data.get("title")
-
-                    # --- 核心修改：更健壮地构建 description ---
                     description_parts = []
 
                     # 如果有系列信息，添加到描述最前面
@@ -349,7 +325,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
                     # 如果最终描述是空的，确保它是空字符串而不是None
                     if not description:
                         description = ""
-                    # ----------------------------------------
                     
                     thumbnail_url = f"{self.api_base_url}/items/{book_id}/cover"
                     
@@ -363,9 +338,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
                         type="Audiobook"
                     ))
                 
-                print(f"\n--- AudiobookshelfAdapter Debug: Parsed {len(results)} results from Audiobookshelf. ---")
-                print("-----------------------------------------------------------------------\n")
-
         except httpx.HTTPStatusError as e:
             print(f"Audiobookshelf search failed ({e.request.url}): {e.response.status_code} - {e.response.text}")
             if e.response:
@@ -379,7 +351,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
         return results
 
     def _build_detail_url(self, item_id: str, item_type: Optional[str] = None, original_query: Optional[str] = None) -> str:
-        # Audiobookshelf 的书籍详情页通常是 /audiobookshelf/audiobooks/<book_id>
         # 这里不需要 original_query，因为 ABS 的详情页是基于 ID 的
         if item_type == "book":
             return f"{self.web_base_url}/item/{item_id}"
