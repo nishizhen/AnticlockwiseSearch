@@ -75,13 +75,6 @@ DATA_SOURCE_CONFIGS: Dict[str, dict] = {
         "api_base_url": os.getenv("CALIBREWEB_API_BASE_URL", "http://your-calibreweb-ip:8083/api"),
         "web_base_url": os.getenv("CALIBREWEB_WEB_BASE_URL", "http://your-calibreweb-ip:8083"),
         # TODO：// Calibre-Web可能没有简单的API Key，可能需要session管理
-    },
-    "joplin": {
-        "enabled": False,
-        "api_base_url": os.getenv("JOPLIN_API_BASE_URL", "http://your-joplin-server-ip:27583"), # 如果你使用Joplin Server
-        "web_base_url": os.getenv("JOPLIN_WEB_BASE_URL", "http://your-joplin-server-ip:27583/shares"), # 示例，可能需要调整
-        "token": os.getenv("JOPLIN_TOKEN", "")
-        # 对于Joplin桌面版，直接从Web调用API会更复杂，可能需要一个代理
     }
 }
 
@@ -179,7 +172,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
         self.password = config.get("password")
         self.session_token: Optional[str] = None
         self.token_lock = asyncio.Lock()
-        print(f"DEBUG: AudiobookshelfAdapter web_base_url is: {self.web_base_url}") # 调试信息
 
     async def _login(self) -> bool:
         if not self.username or not self.password or not self.web_base_url:
@@ -192,12 +184,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
             "username": self.username,
             "password": self.password
         }
-        # -------------------------------------
-
-        print("\n--- AudiobookshelfAdapter Debug: Attempting Login ---")
-        print(f"Login URL: {login_url}")
-        print(f"Username: {self.username}")
-        print("--------------------------------------------------\n")
 
         try:
             async with httpx.AsyncClient() as client:
@@ -356,7 +342,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
             return f"{self.web_base_url}/item/{item_id}"
         return f"{self.web_base_url}/"
 
-
 class PhotoPrismAdapter(DataSourceAdapter):
     async def search(self, query: str) -> List[SearchResult]:
         if not self.enabled: return []
@@ -468,62 +453,12 @@ class CalibreWebAdapter(DataSourceAdapter):
     def _build_detail_url(self, item_id: str, item_type: Optional[str] = None) -> str:
         return f"{self.web_base_url}/book/{item_id}"
 
-
-class JoplinAdapter(DataSourceAdapter):
-    async def search(self, query: str) -> List[SearchResult]:
-        if not self.enabled: return []
-        results = []
-        try:
-            # 确保 api_base_url, token 都已正确加载
-            if not self.api_base_url:
-                print("JoplinAdapter: api_base_url is not set for the adapter.")
-                return results
-            if "token" not in self.config or not self.config["token"]:
-                print("JoplinAdapter: Token is not set in config.")
-                return results
-
-            async with httpx.AsyncClient() as client:
-                # Joplin Data API 搜索笔记，需要 token
-                response = await client.get(
-                    f"{self.api_base_url}/notes",
-                    params={"token": self.config["token"], "query": query, "fields": "id,title,body"},
-                    timeout=10
-                )
-                response.raise_for_status()
-                data = response.json()
-                for note in data: # TODO：// 需要验证返回的是笔记列表
-                    # Joplin 通常没有直接的web UI详情页，如果使用Joplin Server的Web Clipper，可能需要自定义处理
-                    # 这里的detail_url可能指向Joplin Web Clipper或自定义页面
-                    results.append(SearchResult(
-                        id=note["id"],
-                        source="Joplin",
-                        title=note.get("title", "Untitled Note"),
-                        description=note.get("body", "")[:200] + "..." if note.get("body") else None, # 截断部分内容作为描述
-                        # Joplin 通常没有缩略图，除非特殊处理笔记中的图片
-                        thumbnail_url=None,
-                        detail_url=self._build_detail_url(note["id"]),
-                        type="Note"
-                    ))
-        except httpx.HTTPStatusError as e:
-            print(f"Joplin search failed ({e.request.url}): {e.response.status_code} - {e.response.text}")
-        except httpx.RequestError as e:
-            print(f"Joplin request error: {e}")
-        return results
-
-    def _build_detail_url(self, item_id: str, item_type: Optional[str] = None) -> str:
-        # Joplin的Web UI跳转通常比较复杂，或者需要Joplin Server的特定共享链接
-        # MVP阶段，这里可能只是一个占位符或指向Joplin Server主页
-        # 例如，如果Joplin Server支持，可能是 f"{self.web_base_url}/notes/{item_id}"
-        return f"{self.web_base_url}/" # 回退到主页，或自定义一个提示页
-
-
 # 适配器实例列表
 ADAPTERS: List[DataSourceAdapter] = [
     JellyfinAdapter(DATA_SOURCE_CONFIGS["jellyfin"]),
     AudiobookshelfAdapter(DATA_SOURCE_CONFIGS["audiobookshelf"]),
     PhotoPrismAdapter(DATA_SOURCE_CONFIGS["photoprism"]),
     CalibreWebAdapter(DATA_SOURCE_CONFIGS["calibreweb"]),
-    JoplinAdapter(DATA_SOURCE_CONFIGS["joplin"]),
 ]
 
 @app.get("/search", response_model=List[SearchResult])
