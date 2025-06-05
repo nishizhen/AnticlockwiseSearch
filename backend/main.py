@@ -63,19 +63,19 @@ DATA_SOURCE_CONFIGS: Dict[str, dict] = {
         "api_key": os.getenv("PHOTOPRISM_API_KEY", "")
     },
     "audiobookshelf": {
-        "enabled": True,
+        "enabled": False,
         "api_base_url": os.getenv("AUDIOBOOKSHELF_API_BASE_URL", "http://your-audiobookshelf-ip:80/api"),
         "web_base_url": os.getenv("AUDIOBOOKSHELF_WEB_BASE_URL", "http://your-audiobookshelf-ip"),
         "api_key": os.getenv("AUDIOBOOKSHELF_API_KEY", "") # 替换为实际的认证方式
     },
     "calibreweb": {
-        "enabled": True,
+        "enabled": False,
         "api_base_url": os.getenv("CALIBREWEB_API_BASE_URL", "http://your-calibreweb-ip:8083/api"),
         "web_base_url": os.getenv("CALIBREWEB_WEB_BASE_URL", "http://your-calibreweb-ip:8083"),
         # TODO：// Calibre-Web可能没有简单的API Key，可能需要session管理
     },
     "joplin": {
-        "enabled": True,
+        "enabled": False,
         "api_base_url": os.getenv("JOPLIN_API_BASE_URL", "http://your-joplin-server-ip:27583"), # 如果你使用Joplin Server
         "web_base_url": os.getenv("JOPLIN_WEB_BASE_URL", "http://your-joplin-server-ip:27583/shares"), # 示例，可能需要调整
         "token": os.getenv("JOPLIN_TOKEN", "")
@@ -219,7 +219,6 @@ class AudiobookshelfAdapter(DataSourceAdapter):
         # 其他类型如 series 等可在此扩展
         return f"{self.web_base_url}/" # 回退到主页
 
-
 class PhotoPrismAdapter(DataSourceAdapter):
     async def search(self, query: str) -> List[SearchResult]:
         if not self.enabled: return []
@@ -229,40 +228,68 @@ class PhotoPrismAdapter(DataSourceAdapter):
             if not self.api_base_url:
                 print("PhotoPrismAdapter: api_base_url is not set for the adapter.")
                 return results
-            if "api_key" not in self.config or not self.config["api_key"]:
-                print("PhotoPrismAdapter: API key is not set in config.")
-                return results
 
             async with httpx.AsyncClient() as client:
-                # PhotoPrism API Key 通常在查询参数中
+                params = {
+                    "q": query,
+                    "count": 100,
+                    "offset": 0,
+                    "merged": True,
+                    "country": "",
+                    "camera": 0,
+                    "lens": 0,
+                    "label": "",
+                    "latlng": "",
+                    "year": 0,
+                    "month": 0,
+                    "color": "",
+                    "order": "newest",
+                    "public": True,
+                    "quality": 3
+                }
+                request_url = f"{self.api_base_url}/photos"
                 response = await client.get(
-                    f"{self.api_base_url}/photos",
-                    params={"q": query, "api_key": self.config["api_key"]},
+                    request_url,
+                    params=params,
                     timeout=10
                 )
                 response.raise_for_status()
                 data = response.json()
-                for photo in data.get("results", []):
-                    # PhotoPrism 缩略图路径
-                    thumbnail_url = f"{self.api_base_url}/photos/{photo['UID']}/thumb/200" # 200是尺寸
+                for photo in data:
+                    # --- CHANGE THIS LINE to use 'Hash' ---
+                    # PhotoPrism's web UI uses /api/v1/t/<HASH>/public/tile_<SIZE>
+                    # We need to get the 'Hash' from the photo object
+                    photo_hash = photo.get("Hash")
+                    if photo_hash:
+                        # Construct the thumbnail URL using the Hash and desired size (e.g., 200 or 500)
+                        # We use web_base_url because it already has the base host:port
+                        thumbnail_url = f"{self.web_base_url}/api/v1/t/{photo_hash}/public/tile_500"
+                    else:
+                        # Fallback if Hash is not found (though it should be)
+                        thumbnail_url = "" # Or a placeholder image URL
+                        print(f"Warning: Photo {photo.get('UID')} has no 'Hash' for thumbnail generation.")
+
                     results.append(SearchResult(
                         id=photo["UID"],
                         source="PhotoPrism",
-                        title=photo.get("Title") or photo.get("FileName"),
+                        title=photo.get("Title") or photo.get("FileName", "Untitled Photo"),
                         description=photo.get("Description"),
-                        thumbnail_url=thumbnail_url,
-                        detail_url=self._build_detail_url(photo["UID"]),
+                        thumbnail_url=thumbnail_url, # Use the newly constructed URL
+                        detail_url=self._build_detail_url(photo["Hash"]),
                         type="Photo"
                     ))
         except httpx.HTTPStatusError as e:
             print(f"PhotoPrism search failed ({e.request.url}): {e.response.status_code} - {e.response.text}")
+            if e.response:
+                print(f"PhotoPrism error response body: {e.response.text}")
         except httpx.RequestError as e:
             print(f"PhotoPrism request error: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred in PhotoPrismAdapter: {e}")
         return results
 
     def _build_detail_url(self, item_id: str, item_type: Optional[str] = None) -> str:
-        return f"{self.web_base_url}/photos/{item_id}"
-
+        return f"{self.web_base_url}/api/v1/dl/{item_id}"
 
 class CalibreWebAdapter(DataSourceAdapter):
     async def search(self, query: str) -> List[SearchResult]:
