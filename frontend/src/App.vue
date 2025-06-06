@@ -7,9 +7,24 @@ const searchResults = ref([]);
 const isLoading = ref(false);
 const error = ref(null);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-// 这里的 `VITE_API_BASE_URL` 会在 Docker 容器内部被设置为 `http://anticlockwise_backend:8000`
-// 在本地开发时，如果没有注入环境变量，它会回退到 `http://localhost:8000`
+// 运行时获取API基础URL
+const getApiBaseUrl = () => {
+  // 首先尝试从window对象获取（可以通过index.html注入）
+  if (window.VITE_API_BASE_URL) {
+    return window.VITE_API_BASE_URL;
+  }
+  
+  // 然后尝试从构建时的环境变量获取
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // 最后使用默认值
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+console.log('Using API_BASE_URL:', API_BASE_URL); // 添加调试日志
 
 async function performSearch() {
     if (!searchQuery.value.trim()) {
