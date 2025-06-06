@@ -10,6 +10,7 @@ AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。�
 
 ![截图1](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/1.png)
 ![截图2](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/2.png)
+![截图3](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/3.png)
 
 ## 项目理念
 

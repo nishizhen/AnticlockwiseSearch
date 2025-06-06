@@ -8,6 +8,7 @@ AnticlockwiseSearch is a unified search platform designed for home NAS users. Ar
 
 ![Screenshot 1](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/1.png)
 ![Screenshot 2](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/2.png)
+![Screenshot 3](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/3.png)
 
 ## Project Philosophy
 
