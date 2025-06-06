@@ -23,8 +23,12 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # 复制自定义的 Nginx 配置文件 (可选，但推荐用于生产环境)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# 暴露 Nginx 监听的端口
+# 复制启动脚本
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# 暴露端口
 EXPOSE 80
 
-# Nginx 启动命令
-CMD ["nginx", "-g", "daemon off;"]
+# 使用自定义启动脚本
+ENTRYPOINT ["/docker-entrypoint.sh"]

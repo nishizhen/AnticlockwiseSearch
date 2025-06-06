@@ -1,15 +1,16 @@
 <script setup>
 import { ref } from 'vue';
-import axios from 'axios'; // 使用 axios 发送 HTTP 请求
+import axios from 'axios';
 
 const searchQuery = ref('');
 const searchResults = ref([]);
 const isLoading = ref(false);
 const error = ref(null);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-// 这里的 `VITE_API_BASE_URL` 会在 Docker 容器内部被设置为 `http://anticlockwise_backend:8000`
-// 在本地开发时，如果没有注入环境变量，它会回退到 `http://localhost:8000`
+// 使用占位符，将在容器启动时被替换
+const API_BASE_URL = '__API_BASE_URL__';
+
+console.log('Using API_BASE_URL:', API_BASE_URL);
 
 async function performSearch() {
     if (!searchQuery.value.trim()) {
@@ -22,7 +23,7 @@ async function performSearch() {
     try {
         const response = await axios.get(`${API_BASE_URL}/search`, {
             params: { query: searchQuery.value },
-            timeout: 15000 // 15秒超时
+            timeout: 15000
         });
         searchResults.value = response.data;
     } catch (err) {
