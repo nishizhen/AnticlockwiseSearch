@@ -4,6 +4,11 @@
 
 AnticlockwiseSearch is a unified search platform designed for home NAS users. Are you tired of switching between PhotoPrism to find photos, Jellyfin for movies, Audiobookshelf for audiobooks, Calibre Web for e-books, just to search for a specific item? AnticlockwiseSearch aims to solve this by providing a **single, unified search entry point** for all your scattered digital resources on your NAS.
 
+## Some screenshots
+
+![Screenshot 1](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/1.png)
+![Screenshot 2](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/2.png)
+
 ## Project Philosophy
 
 We believe your personal digital resources should work for you, not the other way around. AnticlockwiseSearch aims to:

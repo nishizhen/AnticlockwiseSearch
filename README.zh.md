@@ -6,6 +6,10 @@
 
 AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。你是否厌倦了在 PhotoPrism 里找照片、在 Jellyfin 里找电影、在 Audiobookshelf 里找有声书、在 Calibre Web 里找电子书时，需要挨个打开应用进行搜索？AnticlockwiseSearch 的目标就是解决这个问题，它提供一个**统一的搜索入口**，让你能从一个地方搜索所有这些分散在 NAS 上的数字资源。
 
+## 截图
+
+![截图1](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/1.png)
+![截图2](https://github.com/nishizhen/AnticlockwiseSearch/blob/main/screenshots/2.png)
 
 ## 项目理念
 
