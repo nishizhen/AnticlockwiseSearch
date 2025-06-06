@@ -2,7 +2,7 @@
 
 ## Welcome to AnticlockwiseSearch\!
 
-AnticlockwiseSearch is a unified search platform designed for home NAS users. Are you tired of switching between PhotoPrism to find photos, Jellyfin for movies, Audiobookshelf for audiobooks, Calibre Web for e-books, and Joplin for notes, just to search for a specific item? AnticlockwiseSearch aims to solve this by providing a **single, unified search entry point** for all your scattered digital resources on your NAS.
+AnticlockwiseSearch is a unified search platform designed for home NAS users. Are you tired of switching between PhotoPrism to find photos, Jellyfin for movies, Audiobookshelf for audiobooks, Calibre Web for e-books, just to search for a specific item? AnticlockwiseSearch aims to solve this by providing a **single, unified search entry point** for all your scattered digital resources on your NAS.
 
 ## Project Philosophy
 
@@ -21,7 +21,6 @@ In its MVP (Minimum Viable Product) stage, AnticlockwiseSearch initially support
   * **Audiobookshelf:** Audiobook library
   * **PhotoPrism:** Photo and video management
   * **Calibre Web:** E-book management
-  * **Joplin:** Notes and knowledge base (requires Joplin Server)
 
 ## How to Get Started (For Developers)
 
@@ -39,32 +38,29 @@ cd AnticlockwiseSearch
 Create a `.env` file in the project root directory to store API addresses and keys for each service. **Be sure to replace these with the actual IP addresses, ports, and API keys/tokens of your services running on your NAS.**
 
 ```env
-# .env file example (Please replace with your actual values)
+# Jellyfin 配置
+JELLYFIN_API_BASE_URL="http://192.168.1.100:8096" # 替换为你的 Jellyfin API 地址
+JELLYFIN_WEB_BASE_URL="http://192.168.1.100"     # 替换为你的 Jellyfin Web UI 地址 (通常是域名或IP，不带8096端口)
+JELLYFIN_API_KEY="你的JellyfinAPIKey"            # 在 Jellyfin 仪表板 -> API 密钥中创建
+JELLYFIN_USER_ID="你的Jellyfin用户ID"            # 在 Jellyfin 用户设置中查找
 
-# Jellyfin Configuration
-JELLYFIN_API_BASE_URL="http://your-jellyfin-ip:8096"
-JELLYFIN_WEB_BASE_URL="http://your-jellyfin-ip" # Usually domain or IP, without the 8096 port
-JELLYFIN_API_KEY="YourJellyfinAPIKey"
-JELLYFIN_USER_ID="YourJellyfinUserID"
+# PhotoPrism 配置
+PHOTOPRISM_API_BASE_URL="http://192.168.1.101:2342/api/v1" # 替换为你的 PhotoPrism API 地址
+PHOTOPRISM_WEB_BASE_URL="http://192.168.1.101:2342"      # 替换为你的 PhotoPrism Web UI 地址
+PHOTOPRISM_API_KEY="你的PhotoPrismAPIKey"        # 在 PhotoPrism 设置 -> 高级 -> API 中查找, 如果是无用户和密码的，可以忽略这个配置
 
-# PhotoPrism Configuration
-PHOTOPRISM_API_BASE_URL="http://your-photoprism-ip:2342/api/v1"
-PHOTOPRISM_WEB_BASE_URL="http://your-photoprism-ip:2342"
-PHOTOPRISM_API_KEY="YourPhotoPrismAPIKey"
+# Audiobookshelf 配置
+AUDIOBOOKSHELF_API_BASE_URL="http://192.168.1.102:1337/api" # 替换为你的 Audiobookshelf API 地址
+AUDIOBOOKSHELF_WEB_BASE_URL="http://192.168.1.102:1337"   # 替换为你的 Audiobookshelf Web UI 地址
+AUDIOBOOKSHELF_USERNAME="你的Audiobookshelf用户名" # 替换为你的ABS登录用户名
+AUDIOBOOKSHELF_PASSWORD="你的Audiobookshelf密码"   # 替换为你的ABS登录密码
 
-# Audiobookshelf Configuration
-AUDIOBOOKSHELF_API_BASE_URL="http://your-audiobookshelf-ip:1337/api"
-AUDIOBOOKSHELF_WEB_BASE_URL="http://your-audiobookshelf-ip:1337"
-AUDIOBOOKSHELF_API_KEY="YourAudiobookshelfAPIKey" # Could be a Bearer Token or API Key
+# Calibre-Web 配置
+CALIBREWEB_API_BASE_URL="http://192.168.1.103:8083/api" # 替换为你的 Calibre-Web API 地址 (如果存在)
+CALIBREWEB_WEB_BASE_URL="http://192.168.1.103:8083"   # 替换为你的 Calibre-Web Web UI 地址
+CALIBREWEB_USERNAME="your_calibreweb_username" # 替换为你的登录用户名
+CALIBREWEB_PASSWORD="your_calibreweb_password" # 替换为你的登录密码
 
-# Calibre-Web Configuration
-CALIBREWEB_API_BASE_URL="http://your-calibreweb-ip:8083/api" # If an API exists
-CALIBREWEB_WEB_BASE_URL="http://your-calibreweb-ip:8083"
-
-# Joplin Configuration (if you use Joplin Server)
-JOPLIN_API_BASE_URL="http://your-joplin-server-ip:27583"
-JOPLIN_WEB_BASE_URL="http://your-joplin-server-ip:27583/shares" # Or other accessible note sharing URL
-JOPLIN_TOKEN="YourJoplinPersonalToken"
 ```
 
 ### 3\. Deploy with Docker Compose (Recommended)
