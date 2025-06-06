@@ -25,8 +25,10 @@ DATA_SOURCE_CONFIGS = {
         "password": os.getenv("AUDIOBOOKSHELF_PASSWORD", "")
     },
     "calibreweb": {
-        "enabled": False,
+        "enabled": True,
         "api_base_url": os.getenv("CALIBREWEB_API_BASE_URL", "http://your-calibreweb-ip:8083/api"),
         "web_base_url": os.getenv("CALIBREWEB_WEB_BASE_URL", "http://your-calibreweb-ip:8083"),
+        "username": os.getenv("CALIBREWEB_USERNAME", ""),
+        "password": os.getenv("CALIBREWEB_PASSWORD", "")
     }
 }
