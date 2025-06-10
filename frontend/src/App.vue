@@ -7,8 +7,8 @@ const searchResults = ref([]);
 const isLoading = ref(false);
 const error = ref(null);
 
-// 使用占位符，将在容器启动时被替换
-const API_BASE_URL = '__API_BASE_URL__';
+// 优先使用 Vite 环境变量，若不存在则用容器替换占位符
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '__API_BASE_URL__';
 
 console.log('Using API_BASE_URL:', API_BASE_URL);
 
@@ -47,7 +47,10 @@ async function performSearch() {
 
 <template>
     <div class="container">
-        <h1>AnticlockwiseSearch</h1>
+        <h1>
+            <img src="/AnticlockwiseSearch.png" alt="Logo" style="height:40px;">
+            AnticlockwiseSearch
+        </h1>
         <div class="search-box">
             <input 
                 type="text" 

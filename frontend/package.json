@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "VITE_API_BASE_URL=http://localhost:8000 vite",
     "build": "vite build",
     "preview": "vite preview"
   },
