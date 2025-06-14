@@ -17,6 +17,8 @@ services:
     env_file: # 从 .env 文件加载环境变量，用于连接你的 NAS 服务
       - ./.env
     restart: unless-stopped # 容器退出时自动重启
+    volumes:
+      - /your/host/path:/data/search_root # 挂载主机目录到容器内，供文件系统搜索使用
 
   # AnticlockwiseSearch 前端服务
   anticlockwise_frontend:

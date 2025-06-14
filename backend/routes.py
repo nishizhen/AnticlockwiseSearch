@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
+from fastapi.responses import FileResponse
 from typing import List
 import asyncio
+import os
+import urllib.parse
+
 from models.search_result import SearchResult
 from adapters.jellyfin import JellyfinAdapter
 from adapters.audiobookshelf import AudiobookshelfAdapter
 from adapters.photoprism import PhotoPrismAdapter
 from adapters.calibreweb import CalibreWebAdapter
+from adapters.filesystem import FileSystemAdapter
 from config import DATA_SOURCE_CONFIGS
 
 router = APIRouter()
@@ -15,6 +20,7 @@ ADAPTERS = [
     AudiobookshelfAdapter(DATA_SOURCE_CONFIGS["audiobookshelf"]),
     PhotoPrismAdapter(DATA_SOURCE_CONFIGS["photoprism"]),
     CalibreWebAdapter(DATA_SOURCE_CONFIGS["calibreweb"]),
+    FileSystemAdapter(DATA_SOURCE_CONFIGS["filesystem"]),
 ]
 
 @router.get("/search", response_model=List[SearchResult])
@@ -38,3 +44,13 @@ async def get_config():
     display_config = {k: {key: v for key, v in val.items() if key not in ["api_key", "token", "user_id"]}
                       for k, val in DATA_SOURCE_CONFIGS.items()}
     return display_config
+
+@router.get("/download/filesystem/{file_path:path}")
+def download_file(file_path: str):
+    root_path = DATA_SOURCE_CONFIGS["filesystem"]["search_path"]
+    abs_path = os.path.abspath(os.path.join(root_path, file_path))
+    # 防止路径穿越攻击
+    if not abs_path.startswith(os.path.abspath(root_path)) or not os.path.isfile(abs_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    filename = os.path.basename(abs_path)
+    return FileResponse(abs_path, filename=filename, media_type="application/octet-stream")

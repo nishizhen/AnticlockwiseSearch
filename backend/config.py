@@ -30,5 +30,9 @@ DATA_SOURCE_CONFIGS = {
         "web_base_url": os.getenv("CALIBREWEB_WEB_BASE_URL", "http://your-calibreweb-ip:8083"),
         "username": os.getenv("CALIBREWEB_USERNAME", ""),
         "password": os.getenv("CALIBREWEB_PASSWORD", "")
+    },
+    "filesystem": {
+        "enabled": True,
+        "search_path": os.getenv("FILESYSTEM_SEARCH_PATH", "/data/search_root")
     }
 }
