@@ -33,6 +33,7 @@ DATA_SOURCE_CONFIGS = {
     },
     "filesystem": {
         "enabled": True,
-        "search_path": os.getenv("FILESYSTEM_SEARCH_PATH", "/data/search_root")
+        "search_path": os.getenv("FILESYSTEM_SEARCH_PATH", "/data/search_root"),
+        "backend_base_url": os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
     }
 }

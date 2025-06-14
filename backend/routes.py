@@ -53,4 +53,5 @@ def download_file(file_path: str):
     if not abs_path.startswith(os.path.abspath(root_path)) or not os.path.isfile(abs_path):
         raise HTTPException(status_code=404, detail="File not found")
     filename = os.path.basename(abs_path)
+        
     return FileResponse(abs_path, filename=filename, media_type="application/octet-stream")

@@ -19,6 +19,7 @@ class FileSystemAdapter(DataSourceAdapter):
     def __init__(self, config: dict):
         super().__init__(config)
         self.root_path = config.get("search_path", "/data/search_root")
+        self.backend_base_url = config.get("backend_base_url", "http://localhost:8000")
         self.index = []
         self.build_index()
         self._start_watchdog()
@@ -47,12 +48,10 @@ class FileSystemAdapter(DataSourceAdapter):
                     title=os.path.basename(rel_path),
                     description=rel_path,
                     thumbnail_url=None,
-                    detail_url=f"/download/filesystem/{rel_path}",
+                    detail_url=f"{self.backend_base_url}/download/filesystem/{rel_path}",
                     type="file"
                 ))
         return results
 
     def _build_detail_url(self, item_id: str, item_type: str = None, original_query: str = None) -> str:
-        return f"/download/filesystem/{item_id}"
-
-    # TODO: add download support
+        return f"{self.backend_base_url}/download/filesystem/{item_id}"
