@@ -1,10 +1,8 @@
-
 # AnticlockwiseSearch
-
 
 ## 欢迎来到 AnticlockwiseSearch！
 
-AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。你是否厌倦了在 PhotoPrism 里找照片、在 Jellyfin 里找电影、在 Audiobookshelf 里找有声书、在 Calibre Web 里找电子书时，需要挨个打开应用进行搜索？AnticlockwiseSearch 的目标就是解决这个问题，它提供一个**统一的搜索入口**，让你能从一个地方搜索所有这些分散在 NAS 上的数字资源。
+AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。你是否厌倦了在 PhotoPrism 里找照片、在 Jellyfin 里找电影、在 Audiobookshelf 里找有声书、在 Calibre Web 里找电子书，甚至还要在文件系统里查找资料？AnticlockwiseSearch 的目标就是解决这个问题，提供一个**统一的搜索入口**，让你可以一站式检索 NAS 上所有分散的数字资源。
 
 ## 截图
 
@@ -14,72 +12,48 @@ AnticlockwiseSearch 是一个为家庭 NAS 用户设计的统一搜索平台。�
 
 ## 项目理念
 
-我们相信，你的个人数字资源应该为你服务，而不是让你花费大量时间去管理和寻找。AnticlockwiseSearch 旨在：
+我们相信，你的个人数字资源应该为你服务，而不是让你花大量时间去管理和查找。AnticlockwiseSearch 致力于：
 
-  * **统一搜索体验：** 提供一个简洁直观的界面，输入关键词即可搜索所有已集成的服务。
-  * **直接跳转：** 搜索结果会直接链接到对应应用的资源详情页，让你能无缝切换到原始应用。
-  * **插件化扩展：** 设计为高度模块化和可配置，方便你根据需求添加、移除或自定义数据源。
-  * **避免冗余索引：** 优先通过调用现有服务的 API 进行实时搜索，最大程度减少数据冗余和维护成本。
+  * **统一搜索体验：** 提供简洁直观的界面，一次输入关键词即可检索所有已集成的服务。
+  * **直接跳转：** 搜索结果会直接链接到原应用的资源详情页，无缝切换。
+  * **插件化扩展：** 高度模块化和可配置，方便根据需求添加、移除或自定义数据源。
+  * **避免冗余索引：** 优先通过调用现有服务 API 实时搜索，最大程度减少数据冗余和维护成本。
 
+## 当前支持的数据源
 
-## 当前支持的 MVP 数据源 (更多即将到来！)
+AnticlockwiseSearch 目前支持以下开源资源管理服务及文件系统搜索：
 
-在 MVP (最小可行产品) 阶段，AnticlockwiseSearch 已初步支持以下流行开源资源管理服务：
+  * **Jellyfin：** 电影、电视剧、音乐等多媒体内容
+  * **Audiobookshelf：** 有声书库
+  * **PhotoPrism：** 照片和视频管理
+  * **Calibre Web：** 电子书管理
+  * **文件系统搜索：** 检索指定目录下的文件和文件夹
 
-  * **Jellyfin:** 电影、电视剧、音乐等媒体内容
-  * **Audiobookshelf:** 有声书库
-  * **PhotoPrism:** 照片和视频管理
-  * **Calibre Web:** 电子书管理
+## 如何开始？（开发者与用户通用）
 
-## 如何开始？(为开发者准备)
+AnticlockwiseSearch 后端基于 **FastAPI**，前端基于 **Vue 3**，采用 **Docker Compose** 一键部署。
 
-AnticlockwiseSearch 项目采用 **FastAPI** 作为后端服务，**Vue 3** 作为前端界面，并使用 **Docker Compose** 进行容器化部署。
-
-### **1. 克隆项目**
+### 1. 克隆项目
 
 ```bash
 git clone https://github.com/nishizhen/AnticlockwiseSearch.git
 cd AnticlockwiseSearch
 ```
 
-### **2. 配置 `.env` 文件**
+### 2. 配置 `.env` 文件
 
-在项目根目录下创建一个 `.env` 文件，用于存放各个服务的 API 地址和密钥。**请务必替换为你的 NAS 上实际服务的 IP 地址、端口和对应的 API 密钥/Token。**
-
-```env
-# Jellyfin 配置
-JELLYFIN_API_BASE_URL="http://192.168.1.100:8096" # 替换为你的 Jellyfin API 地址
-JELLYFIN_WEB_BASE_URL="http://192.168.1.100"     # 替换为你的 Jellyfin Web UI 地址 (通常是域名或IP，不带8096端口)
-JELLYFIN_API_KEY="你的JellyfinAPIKey"            # 在 Jellyfin 仪表板 -> API 密钥中创建
-JELLYFIN_USER_ID="你的Jellyfin用户ID"            # 在 Jellyfin 用户设置中查找
-
-# PhotoPrism 配置
-PHOTOPRISM_API_BASE_URL="http://192.168.1.101:2342/api/v1" # 替换为你的 PhotoPrism API 地址
-PHOTOPRISM_WEB_BASE_URL="http://192.168.1.101:2342"      # 替换为你的 PhotoPrism Web UI 地址
-PHOTOPRISM_API_KEY="你的PhotoPrismAPIKey"        # 在 PhotoPrism 设置 -> 高级 -> API 中查找, 如果是无用户和密码的，可以忽略这个配置
-
-# Audiobookshelf 配置
-AUDIOBOOKSHELF_API_BASE_URL="http://192.168.1.102:1337/api" # 替换为你的 Audiobookshelf API 地址
-AUDIOBOOKSHELF_WEB_BASE_URL="http://192.168.1.102:1337"   # 替换为你的 Audiobookshelf Web UI 地址
-AUDIOBOOKSHELF_USERNAME="你的Audiobookshelf用户名" # 替换为你的ABS登录用户名
-AUDIOBOOKSHELF_PASSWORD="你的Audiobookshelf密码"   # 替换为你的ABS登录密码
-
-# Calibre-Web 配置
-CALIBREWEB_API_BASE_URL="http://192.168.1.103:8083/api" # 替换为你的 Calibre-Web API 地址 (如果存在)
-CALIBREWEB_WEB_BASE_URL="http://192.168.1.103:8083"   # 替换为你的 Calibre-Web Web UI 地址
-CALIBREWEB_USERNAME="your_calibreweb_username" # 替换为你的登录用户名
-CALIBREWEB_PASSWORD="your_calibreweb_password" # 替换为你的登录密码
-
-```
-
-### **3. 使用 Docker Compose 部署 (推荐)**
-
-确保你的系统已安装 Docker 和 Docker Compose。
+在项目根目录下创建 `.env` 文件，可直接复制并修改 `.env.example`：
 
 ```bash
-docker compose -f docker-compose.build.yml up --build -d # 自己构建
+cp .env.example .env
 ```
-或者
+
+**请务必根据你 NAS 上实际服务的 IP、端口和 API 密钥/Token 进行替换。**
+
+### 3. 使用 Docker Compose 部署
+
+确保已安装 Docker 和 Docker Compose，然后运行：
+
 ```bash
 docker compose up -d # 使用dockerhub的镜像
 ```
@@ -158,10 +132,15 @@ AnticlockwiseSearch 欢迎所有形式的贡献！我们希望这个项目能成
 
 在提交 Pull Request 时，请提供清晰的描述，解释你的更改和新增的功能。我们期待你的加入！
 
+## License
 
-## 许可证
+MIT License
 
-本项目采用 [MIT 许可证](https://www.google.com/search?q=LICENSE) 发布。
+## 鸣谢
 
-
-**感谢你对 AnticlockwiseSearch 的关注和支持！**
+- [Jellyfin](https://jellyfin.org/)
+- [PhotoPrism](https://photoprism.app/)
+- [Audiobookshelf](https://www.audiobookshelf.org/)
+- [Calibre Web](https://github.com/janeczku/calibre-web)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Vue.js](https://vuejs.org/)

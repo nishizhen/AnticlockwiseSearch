@@ -2,7 +2,7 @@
 
 ## Welcome to AnticlockwiseSearch\!
 
-AnticlockwiseSearch is a unified search platform designed for home NAS users. Are you tired of switching between PhotoPrism to find photos, Jellyfin for movies, Audiobookshelf for audiobooks, Calibre Web for e-books, just to search for a specific item? AnticlockwiseSearch aims to solve this by providing a **single, unified search entry point** for all your scattered digital resources on your NAS.
+AnticlockwiseSearch is a unified search platform designed for home NAS users. Are you tired of switching between PhotoPrism to find photos, Jellyfin for movies, Audiobookshelf for audiobooks, Calibre Web for e-books, or even searching your file system, just to find a specific item? AnticlockwiseSearch aims to solve this by providing a **single, unified search entry point** for all your scattered digital resources on your NAS.
 
 ## Some screenshots
 
@@ -19,16 +19,17 @@ We believe your personal digital resources should work for you, not the other wa
   * **Plugin-Based Extensibility:** Designed to be highly modular and configurable, making it easy to add, remove, or customize data sources based on your needs.
   * **Minimize Redundant Indexing:** Prioritize real-time searching by directly calling existing service APIs, reducing data redundancy and maintenance overhead.
 
-## Currently Supported MVP Data Sources (More Coming Soon\!)
+## Supported Data Sources
 
-In its MVP (Minimum Viable Product) stage, AnticlockwiseSearch initially supports the following popular open-source resource management services:
+AnticlockwiseSearch currently supports the following open-source resource management services and file system search:
 
   * **Jellyfin:** Movies, TV shows, music, and other media content
   * **Audiobookshelf:** Audiobook library
   * **PhotoPrism:** Photo and video management
   * **Calibre Web:** E-book management
+  * **File System Search:** Search files and folders in a specified directory
 
-## How to Get Started (For Developers)
+## How to Get Started (For Developers & Users)
 
 AnticlockwiseSearch is built with **FastAPI** for the backend, **Vue 3** for the frontend, and uses **Docker Compose** for containerized deployment.
 
@@ -41,42 +42,18 @@ cd AnticlockwiseSearch
 
 ### 2\. Configure the `.env` file
 
-Create a `.env` file in the project root directory to store API addresses and keys for each service. **Be sure to replace these with the actual IP addresses, ports, and API keys/tokens of your services running on your NAS.**
-
-```env
-# Jellyfin 配置
-JELLYFIN_API_BASE_URL="http://192.168.1.100:8096" # 替换为你的 Jellyfin API 地址
-JELLYFIN_WEB_BASE_URL="http://192.168.1.100"     # 替换为你的 Jellyfin Web UI 地址 (通常是域名或IP，不带8096端口)
-JELLYFIN_API_KEY="你的JellyfinAPIKey"            # 在 Jellyfin 仪表板 -> API 密钥中创建
-JELLYFIN_USER_ID="你的Jellyfin用户ID"            # 在 Jellyfin 用户设置中查找
-
-# PhotoPrism 配置
-PHOTOPRISM_API_BASE_URL="http://192.168.1.101:2342/api/v1" # 替换为你的 PhotoPrism API 地址
-PHOTOPRISM_WEB_BASE_URL="http://192.168.1.101:2342"      # 替换为你的 PhotoPrism Web UI 地址
-PHOTOPRISM_API_KEY="你的PhotoPrismAPIKey"        # 在 PhotoPrism 设置 -> 高级 -> API 中查找, 如果是无用户和密码的，可以忽略这个配置
-
-# Audiobookshelf 配置
-AUDIOBOOKSHELF_API_BASE_URL="http://192.168.1.102:1337/api" # 替换为你的 Audiobookshelf API 地址
-AUDIOBOOKSHELF_WEB_BASE_URL="http://192.168.1.102:1337"   # 替换为你的 Audiobookshelf Web UI 地址
-AUDIOBOOKSHELF_USERNAME="你的Audiobookshelf用户名" # 替换为你的ABS登录用户名
-AUDIOBOOKSHELF_PASSWORD="你的Audiobookshelf密码"   # 替换为你的ABS登录密码
-
-# Calibre-Web 配置
-CALIBREWEB_API_BASE_URL="http://192.168.1.103:8083/api" # 替换为你的 Calibre-Web API 地址 (如果存在)
-CALIBREWEB_WEB_BASE_URL="http://192.168.1.103:8083"   # 替换为你的 Calibre-Web Web UI 地址
-CALIBREWEB_USERNAME="your_calibreweb_username" # 替换为你的登录用户名
-CALIBREWEB_PASSWORD="your_calibreweb_password" # 替换为你的登录密码
-
-```
-
-### 3\. Deploy with Docker Compose (Recommended)
-
-Ensure Docker and Docker Compose are installed on your system.
+Create a `.env` file in the project root directory to store API addresses and keys for each service. You can copy and modify the provided `.env.example`:
 
 ```bash
-docker compose -f docker-compose.build.yml up --build -d # self build
+cp .env.example .env
 ```
-or
+
+**Be sure to replace these with the actual IP addresses, ports, and API keys/tokens of your services running on your NAS.**
+
+### 3\. Deploy with Docker Compose
+
+Make sure Docker and Docker Compose are installed, then run:
+
 ```bash
 docker compose up -d # use dockerhub images
 ```
@@ -156,6 +133,13 @@ When submitting a Pull Request, please provide a clear description explaining yo
 
 ## License
 
-This project is released under the [MIT License](https://www.google.com/search?q=LICENSE).
+MIT License
 
-**Thank you for your interest and support in AnticlockwiseSearch\!**
+## Acknowledgements
+
+- [Jellyfin](https://jellyfin.org/)
+- [PhotoPrism](https://photoprism.app/)
+- [Audiobookshelf](https://www.audiobookshelf.org/)
+- [Calibre Web](https://github.com/janeczku/calibre-web)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Vue.js](https://vuejs.org/)
