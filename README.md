@@ -27,7 +27,7 @@ AnticlockwiseSearch currently supports the following open-source resource manage
   * **Audiobookshelf:** Audiobook library
   * **PhotoPrism:** Photo and video management
   * **Calibre Web:** E-book management
-  * **File System Search:** Search files and folders in a specified directory
+  * **File System Search:** Search files and folders in a specified directory(My usage scenario is that there is already an automatic sync folder for OneDrive on the NAS, so this search is for searching files in OneDrive.)
 
 ## How to Get Started (For Developers & Users)
 
