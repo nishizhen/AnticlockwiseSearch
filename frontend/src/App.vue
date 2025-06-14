@@ -70,9 +70,16 @@ async function performSearch() {
                 <img v-if="result.thumbnail_url" :src="result.thumbnail_url" alt="Thumbnail" class="thumbnail" />
                 <div class="content">
                     <h3>
-                        <a :href="result.detail_url" target="_blank" rel="noopener noreferrer">
-                            {{ result.title }}
-                        </a>
+                        <template v-if="result.source === 'filesystem'">
+                            <a :href="result.detail_url" :download="result.title">
+                                {{ result.title }}
+                            </a>
+                        </template>
+                        <template v-else>
+                            <a :href="result.detail_url" target="_blank" rel="noopener noreferrer">
+                                {{ result.title }}
+                            </a>
+                        </template>
                     </h3>
                     <p v-if="result.description">{{ result.description }}</p>
                     <span v-if="result.type" class="type-tag">{{ result.type }}</span>
