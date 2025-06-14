@@ -3,7 +3,7 @@ from models.search_result import SearchResult
 import os
 from typing import List
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler, FileCreatedEvent, FileDeletedEvent, FileMovedEvent
 import threading
 import time
 
@@ -11,16 +11,29 @@ class _IndexUpdateHandler(FileSystemEventHandler):
     def __init__(self, adapter):
         self.adapter = adapter
 
-    def on_any_event(self, event):
-        # 简单策略：任何变更都重建索引（可优化为增量）
-        self.adapter.build_index()
+    def on_created(self, event):
+        if not event.is_directory:
+            rel_path = os.path.relpath(event.src_path, self.adapter.root_path)
+            self.adapter.index[rel_path] = event.src_path
+
+    def on_deleted(self, event):
+        if not event.is_directory:
+            rel_path = os.path.relpath(event.src_path, self.adapter.root_path)
+            self.adapter.index.pop(rel_path, None)
+
+    def on_moved(self, event):
+        if not event.is_directory:
+            old_rel = os.path.relpath(event.src_path, self.adapter.root_path)
+            new_rel = os.path.relpath(event.dest_path, self.adapter.root_path)
+            self.adapter.index.pop(old_rel, None)
+            self.adapter.index[new_rel] = event.dest_path
 
 class FileSystemAdapter(DataSourceAdapter):
     def __init__(self, config: dict):
         super().__init__(config)
         self.root_path = config.get("search_path", "/data/search_root")
         self.backend_base_url = config.get("backend_base_url", "http://localhost:8000")
-        self.index = []
+        self.index = {}  # key: rel_path, value: abs_path
         self.build_index()
         self._start_watchdog()
 
@@ -32,15 +45,15 @@ class FileSystemAdapter(DataSourceAdapter):
         t.start()
 
     def build_index(self):
-        self.index = []
+        self.index = {}
         for dirpath, _, filenames in os.walk(self.root_path):
             for fname in filenames:
                 rel_path = os.path.relpath(os.path.join(dirpath, fname), self.root_path)
-                self.index.append((rel_path, os.path.join(dirpath, fname)))
+                self.index[rel_path] = os.path.join(dirpath, fname)
 
     async def search(self, query: str) -> List[SearchResult]:
         results = []
-        for rel_path, abs_path in self.index:
+        for rel_path, abs_path in self.index.items():
             if query.lower() in os.path.basename(rel_path).lower():
                 results.append(SearchResult(
                     id=rel_path,
